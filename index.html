@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Comrade: Animation maker Language</title>
+    <title>Custom Language with Delay</title>
     <style>
         body {
             font-family: 'Inter', monospace; /* Using Inter font */
@@ -73,7 +73,7 @@
 </head>
 <body>
 
-    <h2>Comrade : Animation maker Language</h2>
+    <h2>Custom Programming Language</h2>
     <textarea id="codeInput" placeholder="Type your code here...">
 say("Starting sequence...")
 make_group {dots} keeping ["."]
@@ -140,6 +140,16 @@ wait(500)
 
 my_array.push_to_end("X")
 say("After push_to_end('X'): ")
+say(my_array)
+wait(500)
+
+my_array.push_after(1, "INSERTED_AFTER") // Inserts "INSERTED_AFTER" after index 1 (between B and C)
+say("After push_after(1, 'INSERTED_AFTER'): ")
+say(my_array)
+wait(500)
+
+my_array.push_before(3, "INSERTED_BEFORE") // Inserts "INSERTED_BEFORE" before index 3 (before C)
+say("After push_before(3, 'INSERTED_BEFORE'): ")
 say(my_array)
 wait(500)
 
@@ -515,7 +525,35 @@ say(find_min_between(num1, numbers_array, -5))
                     if (arr) {
                         arr.unshift(evaluate(value)); // unshift adds to the beginning
                     }
-                // NEW: group.delete_after(index) - deletes only one element AFTER the index
+                // NEW: group.push_after(index, value)
+                } else if (/^(\w+)\.push_after\((\d+),\s*(.+)\)$/i.test(line)) {
+                    const [, group, indexStr, valueExpr] = line.match(/^(\w+)\.push_after\((\d+),\s*(.+)\)$/i);
+                    const arr = getArrayVar(group);
+                    const index = parseInt(indexStr);
+                    const value = evaluate(valueExpr);
+                    if (arr) {
+                        // Check if the index is valid for insertion (can be at the end)
+                        if (index >= -1 && index < arr.length) { // -1 allows pushing to start if array is empty
+                            arr.splice(index + 1, 0, value); // Insert value at index + 1
+                        } else {
+                            document.getElementById('output').innerHTML += `Error: Invalid index ${index} for push_after in group '${group}'.\n`;
+                        }
+                    }
+                // NEW: group.push_before(index, value)
+                } else if (/^(\w+)\.push_before\((\d+),\s*(.+)\)$/i.test(line)) {
+                    const [, group, indexStr, valueExpr] = line.match(/^(\w+)\.push_before\((\d+),\s*(.+)\)$/i);
+                    const arr = getArrayVar(group);
+                    const index = parseInt(indexStr);
+                    const value = evaluate(valueExpr);
+                    if (arr) {
+                        // Check if the index is valid for insertion (can be at the end)
+                        if (index >= 0 && index <= arr.length) { // index <= arr.length allows pushing to end if index is arr.length
+                            arr.splice(index, 0, value); // Insert value at index
+                        } else {
+                            document.getElementById('output').innerHTML += `Error: Invalid index ${index} for push_before in group '${group}'.\n`;
+                        }
+                    }
+                // group.delete_after(index) - deletes only one element AFTER the index
                 } else if (/^(\w+)\.delete_after\((\d+)\)$/i.test(line)) {
                     const [, group, indexStr] = line.match(/^(\w+)\.delete_after\((\d+)\)$/i);
                     const arr = getArrayVar(group);
@@ -526,7 +564,7 @@ say(find_min_between(num1, numbers_array, -5))
                     } else if (arr) {
                         document.getElementById('output').innerHTML += `Error: No element to delete after index ${index} in group '${group}'.\n`;
                     }
-                // NEW: group.delete_before(index) - deletes only one element BEFORE the index
+                // group.delete_before(index) - deletes only one element BEFORE the index
                 } else if (/^(\w+)\.delete_before\((\d+)\)$/i.test(line)) {
                     const [, group, indexStr] = line.match(/^(\w+)\.delete_before\((\d+)\)$/i);
                     const arr = getArrayVar(group);
@@ -537,7 +575,7 @@ say(find_min_between(num1, numbers_array, -5))
                     } else if (arr) {
                         document.getElementById('output').innerHTML += `Error: No element to delete before index ${index} in group '${group}'.\n`;
                     }
-                // NEW: group.delete_everything_after(index)
+                // group.delete_everything_after(index)
                 } else if (/^(\w+)\.delete_everything_after\((\d+)\)$/i.test(line)) {
                     const [, group, indexStr] = line.match(/^(\w+)\.delete_everything_after\((\d+)\)$/i);
                     const arr = getArrayVar(group);
