@@ -1,0 +1,375 @@
+ <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Custom Language with Delay</title>
+    <style>
+        body {
+            font-family: 'Inter', monospace; /* Using Inter font */
+            background-color: #f0f0f0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        textarea {
+            width: 90%; /* Responsive width */
+            max-width: 800px; /* Max width for larger screens */
+            height: 300px;
+            font-size: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 8px; /* Rounded corners */
+            padding: 10px;
+            margin-bottom: 15px;
+            resize: vertical; /* Allow vertical resizing */
+        }
+        button {
+            padding: 12px 25px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Green button */
+            color: white;
+            border: none;
+            border-radius: 8px; /* Rounded corners */
+            font-size: 18px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        button:active {
+            background-color: #3e8e41;
+            transform: translateY(0);
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ccc;
+            min-height: 500px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            width: 90%; /* Responsive width */
+            max-width: 800px; /* Max width for larger screens */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+            textarea, .output {
+                width: 95%;
+            }
+            button {
+                width: 95%;
+                font-size: 16px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <h2>Custom Programming Language</h2>
+    <textarea id="codeInput" placeholder="Type your code here...">
+say("Starting sequence...")
+make_group {dots} keeping ["."]
+say(dots)
+wait(500)
+dots.push_to_end(".")
+say(dots)
+wait(500)
+dots.push_to_end(".")
+say(dots)
+wait(500)
+dots.push_to_end(".")
+say(dots)
+wait(1000)
+say("Sequence complete!")
+
+say("--- Growing Line ---")
+make_group {line_chars} keeping ["#"]
+make k keeping 0
+for(k < 5) lets {
+  say(line_chars)
+  line_chars.push_to_end("#")
+  make k keeping k + 1
+  wait(300)
+}
+say("--- Done ---")
+
+say("--- Loop Test ---")
+make loop_var keeping 0
+for(loop_var < 3) lets {
+  say("Loop iteration: ")
+  say(loop_var)
+  make loop_var keeping loop_var + 1
+  wait(200)
+}
+say("Loop test finished. loop_var is: ")
+say(loop_var)
+    </textarea><br />
+    <button onclick="runCode()">Run</button>
+    <div class="output" id="output"></div>
+
+    <script>
+        // Global object to store variables defined in the custom language
+        const variables = {};
+
+        /**
+         * Prints content to the output area.
+         * It intelligently handles variable names, string literals, and expressions.
+         * @param {string} content The content to be printed.
+         */
+        function say(content) {
+            let valueToPrint;
+
+            // 1. Check if content is a string and matches a defined variable name
+            if (typeof content === 'string' && variables.hasOwnProperty(content)) {
+                valueToPrint = variables[content];
+            } else if (typeof content === 'string' && content.startsWith('"') && content.endsWith('"')) {
+                // 2. Check if content is a string literal (e.g., "Hello World")
+                // Remove the surrounding quotes
+                valueToPrint = content.substring(1, content.length - 1);
+            } else {
+                // 3. Otherwise, treat content as an expression and try to evaluate it
+                valueToPrint = evaluate(content);
+            }
+
+            let outputText;
+            if (Array.isArray(valueToPrint)) {
+                // If the value is an array (like a 'group'), join its elements.
+                // The example implies joining with no separator for visual lines/dots.
+                outputText = valueToPrint.join('');
+            } else {
+                // Ensure the value is converted to a string for printing
+                outputText = String(valueToPrint);
+            }
+            document.getElementById('output').innerHTML += outputText + '\n';
+        }
+
+        /**
+         * Calculates the sum of numbers.
+         * @param {...number} nums Numbers to sum.
+         * @returns {number} The sum.
+         */
+        function sum(...nums) {
+            return nums.reduce((acc, val) => acc + val, 0);
+        }
+
+        /**
+         * Calculates the difference between two numbers.
+         * @param {number} a The first number.
+         * @param {number} b The second number.
+         * @returns {number} The difference.
+         */
+        function subtract(a, b) {
+            return a - b;
+        }
+
+        /**
+         * Calculates the product of numbers.
+         * @param {...number} nums Numbers to multiply.
+         * @returns {number} The product.
+         */
+        function multiply(...nums) {
+            return nums.reduce((acc, val) => acc * val, 1);
+        }
+
+        /**
+         * Calculates the division of two numbers. Handles division by zero.
+         * @param {number} a The dividend.
+         * @param {number} b The divisor.
+         * @returns {number} The quotient, or NaN if division by zero.
+         */
+        function divide(a, b) {
+            if (b === 0) {
+                document.getElementById('output').innerHTML += "Error: Division by zero\n";
+                return NaN; // Return NaN for invalid operations
+            }
+            return a / b;
+        }
+
+        /**
+         * Converts input to lowercase and returns it.
+         * @param {*} input The input to convert.
+         * @returns {string} The lowercase string.
+         */
+        function whisper(input) {
+            return String(input).toLowerCase();
+        }
+
+        /**
+         * Converts input to uppercase and returns it.
+         * @param {*} input The input to convert.
+         * @returns {string} The uppercase string.
+         */
+        function aloud(input) {
+            return String(input).toUpperCase();
+        }
+
+        /**
+         * Evaluates a given expression string in a scope that includes variables and built-in functions.
+         * This uses Function constructor and is generally a security risk with untrusted input.
+         * @param {string} expr The expression string to evaluate.
+         * @returns {*} The result of the evaluation.
+         */
+        function evaluate(expr) {
+            try {
+                // Create a scope object that includes all defined variables and built-in functions
+                const scope = {
+                    ...variables, // Spread all current variables into the scope
+                    sum: sum,
+                    subtract: subtract,
+                    multiply: multiply,
+                    divide: divide,
+                    whisper: whisper,
+                    aloud: aloud
+                };
+
+                // Extract keys and values from the scope to pass to the Function constructor
+                const argNames = Object.keys(scope);
+                const argValues = Object.values(scope);
+
+                // Dynamically create and execute a function with the expression
+                // The Function constructor allows running code in a specific scope
+                const evalFunction = new Function(...argNames, `"use strict"; return (${expr});`);
+                return evalFunction(...argValues);
+            } catch (e) {
+                console.error("Evaluation error for expression:", expr, "Error:", e);
+                // Print error to output, avoid recursive 'say' call here
+                document.getElementById('output').innerHTML += `Error evaluating expression: ${expr}\n`;
+                return undefined;
+            }
+        }
+
+        /**
+         * Retrieves an array variable (group) by its name.
+         * Prints an error if the variable is not found or is not an array.
+         * @param {string} groupName The name of the group variable.
+         * @returns {Array|null} The array, or null if not found or not an array.
+         */
+        function getArrayVar(groupName) {
+            if (!variables.hasOwnProperty(groupName)) {
+                document.getElementById('output').innerHTML += `Error: Group '${groupName}' not found.\n`;
+                return null;
+            }
+            if (!Array.isArray(variables[groupName])) {
+                document.getElementById('output').innerHTML += `Error: Variable '${groupName}' is not a group (array).\n`;
+                return null;
+            }
+            return variables[groupName];
+        }
+
+        /**
+         * Pauses execution for a specified number of milliseconds.
+         * @param {number} ms The delay in milliseconds.
+         * @returns {Promise<void>} A promise that resolves after the delay.
+         */
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /**
+         * Asynchronously runs a list of custom language lines.
+         * Handles multi-line constructs like 'for' loops.
+         * @param {string[]} lines An array of code lines.
+         */
+        async function runLines(lines) {
+            let i = 0;
+            while (i < lines.length) {
+                let line = lines[i].trim();
+                if (!line || line.startsWith('//')) {
+                    i++;
+                    continue; // Skip empty lines and comments
+                }
+
+                // Check for multi-line 'for' loop
+                if (line.startsWith('for(') && line.includes(') lets {')) {
+                    let fullBlock = line;
+                    let braceCount = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+                    let j = i + 1;
+
+                    // Consume lines until the matching closing brace is found
+                    while (j < lines.length && braceCount > 0) {
+                        const nextLine = lines[j].trim();
+                        fullBlock += '\n' + nextLine;
+                        braceCount += (nextLine.match(/{/g) || []).length;
+                        braceCount -= (nextLine.match(/}/g) || []).length;
+                        j++;
+                    }
+
+                    // Now process the full block
+                    const match = fullBlock.match(/^for\((.+?)\)\s+lets\s+{([\s\S]+?)}$/i);
+                    if (match) {
+                        const [, condition, block] = match;
+                        const blockLines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
+                        while (evaluate(condition)) {
+                            await runLines(blockLines); // Recursively run the block lines
+                        }
+                        i = j; // Advance index past the consumed block
+                        continue;
+                    } else {
+                        document.getElementById('output').innerHTML += `Error parsing for loop: ${fullBlock}\n`;
+                        i++;
+                        continue;
+                    }
+                }
+
+                // make_group {groupName} keeping [value1, value2, ...]
+                if (/^make_group\s+{(\w+)}\s+keeping\s+(.+)$/i.test(line)) {
+                    const [, groupName, value] = line.match(/^make_group\s+{(\w+)}\s+keeping\s+(.+)$/i);
+                    const evaluated = evaluate(value);
+                    // Ensure the value is an array; if not, wrap it in an array
+                    variables[groupName] = Array.isArray(evaluated) ? evaluated : [evaluated];
+
+                // make varName keeping value
+                } else if (/^make\s+([a-zA-Z_]\w*)\s+keeping\s+(.+)$/i.test(line)) {
+                    const [, varName, expr] = line.match(/^make\s+([a-zA-Z_]\w*)\s+keeping\s+(.+)$/i);
+                    variables[varName] = evaluate(expr);
+
+                // say("text") or say(variable) or say(expression)
+                } else if (/^say\((.+)\)$/i.test(line)) {
+                    // Extract the content inside say() and pass it to the say function
+                    say(line.match(/^say\((.+)\)$/i)[1].trim());
+
+                // wait(milliseconds)
+                } else if (/^wait\((\d+)\)$/i.test(line)) {
+                    const ms = parseInt(line.match(/^wait\((\d+)\)$/i)[1]);
+                    await wait(ms);
+
+                // group.push_to_end(value)
+                } else if (/^(\w+)\.push_to_end\((.+)\)$/i.test(line)) {
+                    const [, group, value] = line.match(/^(\w+)\.push_to_end\((.+)\)$/i);
+                    const arr = getArrayVar(group);
+                    if (arr) {
+                        arr.push(evaluate(value));
+                    }
+                } else {
+                    document.getElementById('output').innerHTML += `Unknown command: ${line}\n`;
+                }
+                i++; // Move to the next line for single-line commands
+            }
+        }
+
+        /**
+         * Clears the output and starts running the code from the input textarea.
+         */
+        async function runCode() {
+            document.getElementById('output').innerHTML = ''; // Clear previous output
+            // Reset variables for a fresh run
+            for (const key in variables) {
+                delete variables[key];
+            }
+
+            const code = document.getElementById('codeInput').value;
+            const lines = code.split('\n');
+            await runLines(lines);
+        }
+    </script>
+
+</body>
+</html>
