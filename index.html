@@ -1,8 +1,8 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Comrade: A animation making Language</title>
+    <title>Custom Language with Delay</title>
     <style>
         body {
             font-family: 'Inter', monospace; /* Using Inter font */
@@ -111,6 +111,72 @@ for(loop_var < 3) lets {
 }
 say("Loop test finished. loop_var is: ")
 say(loop_var)
+
+say("--- Array Manipulation Test ---")
+make_group {my_array} keeping ["A", "B", "C", "D", "E", "F", "G"]
+say("Original array: ")
+say(my_array)
+wait(500)
+
+my_array.push_to_start("Z")
+say("After push_to_start('Z'): ")
+say(my_array)
+wait(500)
+
+my_array.delete_after(2) // Deletes the element at index 3 (which is 'D')
+say("After delete_after(2): ")
+say(my_array)
+wait(500)
+
+my_array.delete_before(1) // Deletes the element at index 0 (which is 'Z')
+say("After delete_before(1): ")
+say(my_array)
+wait(500)
+
+my_array.delete_everything_after(2) // Deletes everything after index 2 (i.e., 'F', 'G')
+say("After delete_everything_after(2): ")
+say(my_array)
+wait(500)
+
+my_array.push_to_end("X")
+say("After push_to_end('X'): ")
+say(my_array)
+wait(500)
+
+make_group {empty_space_array} keeping ["Hello", "", "World", " "]
+say("Array with empty spaces: ")
+say(empty_space_array)
+wait(500)
+
+say("--- Min/Max Test ---")
+make num1 keeping 10
+make num2 keeping 5
+make num3 keeping 20
+make_group {numbers_array} keeping [1, 5, 9, 2, 8]
+
+say("Max of 10, 5, 20: ")
+say(find_max_between(num1, num2, num3))
+wait(500)
+
+say("Min of 10, 5, 20: ")
+say(find_min_between(num1, num2, num3))
+wait(500)
+
+say("Max in numbers_array: ")
+say(find_max_between(numbers_array))
+wait(500)
+
+say("Min in numbers_array: ")
+say(find_min_between(numbers_array))
+wait(500)
+
+say("Max of 10, numbers_array, 100: ")
+say(find_max_between(num1, numbers_array, 100))
+wait(500)
+
+say("Min of 10, numbers_array, -5: ")
+say(find_min_between(num1, numbers_array, -5))
+
     </textarea><br />
     <button onclick="runCode()">Run</button>
     <div class="output" id="output"></div>
@@ -142,8 +208,8 @@ say(loop_var)
             let outputText;
             if (Array.isArray(valueToPrint)) {
                 // If the value is an array (like a 'group'), join its elements.
-                // The example implies joining with no separator for visual lines/dots.
-                outputText = valueToPrint.join('');
+                // Print with brackets for clarity, including empty strings.
+                outputText = '[' + valueToPrint.map(item => String(item)).join(', ') + ']';
             } else {
                 // Ensure the value is converted to a string for printing
                 outputText = String(valueToPrint);
@@ -212,6 +278,81 @@ say(loop_var)
         }
 
         /**
+         * Parses and flattens a list of arguments (numbers, variables, or arrays of numbers) into a single array of numbers.
+         * @param {...*} args Arguments to parse.
+         * @returns {number[]} An array of numbers.
+         */
+        function parseNumbersFromArgs(...args) {
+            const numbers = [];
+            for (const arg of args) {
+                // If the argument is a string, try to evaluate it as a variable or literal
+                let value = arg;
+                if (typeof arg === 'string') {
+                    if (variables.hasOwnProperty(arg)) {
+                        value = variables[arg];
+                    } else if (arg.startsWith('"') && arg.endsWith('"')) {
+                        // It's a string literal, but we expect numbers, so skip or error
+                        document.getElementById('output').innerHTML += `Warning: String literal "${arg}" provided where numbers are expected.\n`;
+                        continue;
+                    } else {
+                        // Try to evaluate as an expression if it's not a direct variable or literal
+                        try {
+                            value = evaluate(arg);
+                        } catch (e) {
+                            document.getElementById('output').innerHTML += `Warning: Could not evaluate "${arg}" to a number.\n`;
+                            continue;
+                        }
+                    }
+                }
+
+                if (Array.isArray(value)) {
+                    for (const item of value) {
+                        const num = parseFloat(item);
+                        if (!isNaN(num)) {
+                            numbers.push(num);
+                        } else {
+                            document.getElementById('output').innerHTML += `Warning: Non-numeric value "${item}" found in array for min/max operation.\n`;
+                        }
+                    }
+                } else {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                        numbers.push(num);
+                    } else {
+                        document.getElementById('output').innerHTML += `Warning: Non-numeric value "${value}" provided for min/max operation.\n`;
+                    }
+                }
+            }
+            return numbers;
+        }
+
+        /**
+         * Finds the maximum number among a set of numbers, variables, or an array of numbers.
+         * @param {...*} args Numbers, variable names, or an array variable.
+         * @returns {number|string} The maximum number or an error message.
+         */
+        function findMaxBetween(...args) {
+            const numbers = parseNumbersFromArgs(...args);
+            if (numbers.length === 0) {
+                return "Error: No valid numbers found for find_max_between.";
+            }
+            return Math.max(...numbers);
+        }
+
+        /**
+         * Finds the minimum number among a set of numbers, variables, or an array of numbers.
+         * @param {...*} args Numbers, variable names, or an array variable.
+         * @returns {number|string} The minimum number or an error message.
+         */
+        function findMinBetween(...args) {
+            const numbers = parseNumbersFromArgs(...args);
+            if (numbers.length === 0) {
+                return "Error: No valid numbers found for find_min_between.";
+            }
+            return Math.min(...numbers);
+        }
+
+        /**
          * Evaluates a given expression string in a scope that includes variables and built-in functions.
          * This uses Function constructor and is generally a security risk with untrusted input.
          * @param {string} expr The expression string to evaluate.
@@ -227,7 +368,9 @@ say(loop_var)
                     multiply: multiply,
                     divide: divide,
                     whisper: whisper,
-                    aloud: aloud
+                    aloud: aloud,
+                    find_max_between: findMaxBetween, // Add new function
+                    find_min_between: findMinBetween  // Add new function
                 };
 
                 // Extract keys and values from the scope to pass to the Function constructor
@@ -281,24 +424,35 @@ say(loop_var)
         async function runLines(lines) {
             let i = 0;
             while (i < lines.length) {
+                let originalLine = lines[i]; // Keep original line for multi-line block consumption
                 let line = lines[i].trim();
-                if (!line || line.startsWith('//')) {
+
+                // Strip comments from the line before processing
+                const commentIndex = line.indexOf('//');
+                if (commentIndex !== -1) {
+                    line = line.substring(0, commentIndex).trim();
+                }
+
+                if (!line) { // After stripping comments, line might be empty
                     i++;
-                    continue; // Skip empty lines and comments
+                    continue; // Skip empty lines
                 }
 
                 // Check for multi-line 'for' loop
                 if (line.startsWith('for(') && line.includes(') lets {')) {
-                    let fullBlock = line;
-                    let braceCount = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+                    let fullBlock = originalLine; // Start with the original line including potential comments
+                    let braceCount = (originalLine.match(/{/g) || []).length - (originalLine.match(/}/g) || []).length;
                     let j = i + 1;
 
                     // Consume lines until the matching closing brace is found
                     while (j < lines.length && braceCount > 0) {
-                        const nextLine = lines[j].trim();
-                        fullBlock += '\n' + nextLine;
-                        braceCount += (nextLine.match(/{/g) || []).length;
-                        braceCount -= (nextLine.match(/}/g) || []).length;
+                        const nextOriginalLine = lines[j];
+                        const nextLineTrimmed = nextOriginalLine.trim();
+                        const nextLineWithoutComment = nextLineTrimmed.indexOf('//') !== -1 ? nextLineTrimmed.substring(0, nextLineTrimmed.indexOf('//')).trim() : nextLineTrimmed;
+
+                        fullBlock += '\n' + nextOriginalLine; // Add original line to fullBlock
+                        braceCount += (nextLineWithoutComment.match(/{/g) || []).length;
+                        braceCount -= (nextLineWithoutComment.match(/}/g) || []).length;
                         j++;
                     }
 
@@ -306,7 +460,13 @@ say(loop_var)
                     const match = fullBlock.match(/^for\((.+?)\)\s+lets\s+{([\s\S]+?)}$/i);
                     if (match) {
                         const [, condition, block] = match;
-                        const blockLines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
+                        // Recursively run the block lines, ensuring they are also stripped of comments
+                        const blockLines = block.split('\n').map(l => {
+                            const trimmed = l.trim();
+                            const commentIdx = trimmed.indexOf('//');
+                            return commentIdx !== -1 ? trimmed.substring(0, commentIdx).trim() : trimmed;
+                        }).filter(l => l);
+
                         while (evaluate(condition)) {
                             await runLines(blockLines); // Recursively run the block lines
                         }
@@ -348,7 +508,47 @@ say(loop_var)
                     if (arr) {
                         arr.push(evaluate(value));
                     }
-                } else {
+                // NEW: group.push_to_start(value)
+                } else if (/^(\w+)\.push_to_start\((.+)\)$/i.test(line)) {
+                    const [, group, value] = line.match(/^(\w+)\.push_to_start\((.+)\)$/i);
+                    const arr = getArrayVar(group);
+                    if (arr) {
+                        arr.unshift(evaluate(value)); // unshift adds to the beginning
+                    }
+                // NEW: group.delete_after(index) - deletes only one element AFTER the index
+                } else if (/^(\w+)\.delete_after\((\d+)\)$/i.test(line)) {
+                    const [, group, indexStr] = line.match(/^(\w+)\.delete_after\((\d+)\)$/i);
+                    const arr = getArrayVar(group);
+                    const index = parseInt(indexStr);
+                    // Check if the element to delete (index + 1) exists
+                    if (arr && index + 1 >= 0 && index + 1 < arr.length) {
+                        arr.splice(index + 1, 1); // Removes 1 element at index + 1
+                    } else if (arr) {
+                        document.getElementById('output').innerHTML += `Error: No element to delete after index ${index} in group '${group}'.\n`;
+                    }
+                // NEW: group.delete_before(index) - deletes only one element BEFORE the index
+                } else if (/^(\w+)\.delete_before\((\d+)\)$/i.test(line)) {
+                    const [, group, indexStr] = line.match(/^(\w+)\.delete_before\((\d+)\)$/i);
+                    const arr = getArrayVar(group);
+                    const index = parseInt(indexStr);
+                    // Check if the element to delete (index - 1) exists
+                    if (arr && index - 1 >= 0 && index - 1 < arr.length) {
+                        arr.splice(index - 1, 1); // Removes 1 element at index - 1
+                    } else if (arr) {
+                        document.getElementById('output').innerHTML += `Error: No element to delete before index ${index} in group '${group}'.\n`;
+                    }
+                // NEW: group.delete_everything_after(index)
+                } else if (/^(\w+)\.delete_everything_after\((\d+)\)$/i.test(line)) {
+                    const [, group, indexStr] = line.match(/^(\w+)\.delete_everything_after\((\d+)\)$/i);
+                    const arr = getArrayVar(group);
+                    const index = parseInt(indexStr);
+                    if (arr && index >= 0 && index < arr.length) {
+                        arr.splice(index + 1); // Removes all elements from index + 1 to the end
+                    } else if (arr) {
+                        document.getElementById('output').innerHTML += `Error: Invalid index for delete_everything_after in group '${group}'.\n`;
+                    }
+                }
+                else {
                     document.getElementById('output').innerHTML += `Unknown command: ${line}\n`;
                 }
                 i++; // Move to the next line for single-line commands
